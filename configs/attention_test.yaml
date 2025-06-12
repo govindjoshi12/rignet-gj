@@ -1,0 +1,8 @@
+# Use val and test sets for testing
+train_path: './data/ModelResource_RigNetv1_preproccessed/mesh_graphs/val.pkl'
+val_path: './data/ModelResource_RigNetv1_preproccessed/mesh_graphs/test.pkl'
+epochs: 1
+lr: 1e-6
+wd: 1e-5
+device: cpu
+logdir: runs/attention_pretrain

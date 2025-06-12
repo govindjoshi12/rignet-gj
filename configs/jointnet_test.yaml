@@ -1,0 +1,9 @@
+# Use val and test sets for testing
+load_state: 'runs/attention_pretrain_lr1e-06_wd1e-05_20250522-082444/jointnet_final.pt'
+train_path: './data/ModelResource_RigNetv1_preproccessed/mesh_graphs/val.pkl'
+val_path: './data/ModelResource_RigNetv1_preproccessed/mesh_graphs/test.pkl'
+epochs: 1
+lr: 1e-6
+wd: 1e-5
+device: cpu
+logdir: runs/jointnet_train

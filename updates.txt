@@ -1,0 +1,8 @@
+- attention pretrain script with tensorboard and config files
+- jointnet finetune script
+    - L_d + L_joint
+- Edge Dropout
+
+TODOs:
+- Batching
+- Semilogy on tensorboard
