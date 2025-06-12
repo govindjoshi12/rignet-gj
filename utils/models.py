@@ -98,11 +98,11 @@ class GMEdgeNet(nn.Module):
             # No final activation. Outputs should be unconstrained
         )
 
-    def forward(self, verts, one_ring, geodesic):
+    def forward(self, vertices, one_ring, geodesic):
 
-        N, D = verts.shape
+        N, D = vertices.shape
 
-        out64 = self.conv1(verts, one_ring, geodesic)
+        out64 = self.conv1(vertices, one_ring, geodesic)
         out256 = self.conv2(out64, one_ring, geodesic)
         out512 = self.conv3(out256, one_ring, geodesic)
 
@@ -111,7 +111,7 @@ class GMEdgeNet(nn.Module):
         # Channelwise max: [832]
         x832_max, x832_max_idxs = torch.max(x832, dim=0)
 
-        x835 = torch.cat([verts, x832], dim=1)
+        x835 = torch.cat([vertices, x832], dim=1)
         glob1024 = self.global_mlp(x832_max)
 
         x1859 = torch.cat([x835, glob1024.expand(N, 1024)], dim=1)
@@ -222,7 +222,7 @@ class MeanShiftClusterer(nn.Module):
                  infer_iters=50):
         
         super().__init__()
-        self.h = initial_h
+        self.h = nn.Parameter(data=torch.tensor(initial_h), requires_grad=True)
 
         self.train_iters = train_iters
         self.infer_iters = infer_iters
@@ -280,6 +280,11 @@ class JointNet(nn.Module):
         """
 
         return self.attn_head(*self._extract_graph(G))
+
+    def disp_head_parameters(self):
+        """Return parameters of the displacement head."""
+
+        return self.disp_head.parameters()
 
     def disp_head_forward(self, G: dict):
         """
