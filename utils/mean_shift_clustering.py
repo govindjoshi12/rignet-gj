@@ -122,7 +122,7 @@ def mode_extraction(vertices: torch.Tensor,
     dist = torch.sqrt((diff * diff).sum(dim=2))    # [N, N]
 
     # Mode selection with suppression
-    unused_mask = torch.ones(N, dtype=torch.bool)  # True = point is still eligible
+    unused_mask = torch.ones_like(densities, dtype=torch.bool)  # True = point is still eligible
     modes = []
 
     while unused_mask.any():

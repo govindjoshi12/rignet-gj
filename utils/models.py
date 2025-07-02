@@ -327,9 +327,14 @@ class JointNet(nn.Module):
         # Batched: split both q and attn by the given vertex counts
         # Splitting and indexing on a contigutous range is faster than using boolean masks
         splits = torch.split(torch.arange(verts.size(0)), vpg.tolist())
-        outs = []
+        q_list, attn_list, joints_list = [], [], []
         for idxs in splits:
             q_b = q[idxs]
             attn_b = attn[idxs]
-            outs.append(self.clustering_head(q_b, attn_b))
-        return outs
+            joints_b = self.clustering_head(q_b, attn_b)
+
+            q_list.append(q_b)
+            attn_list.append(attn_b)
+            joints_list.append(joints_b)
+
+        return q_list, attn_list, joints_list
