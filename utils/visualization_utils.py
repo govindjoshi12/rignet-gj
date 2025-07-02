@@ -135,7 +135,7 @@ def visualize_mesh_graph(vertices: np.ndarray,
         geometries.extend(_points_to_spheres(
             displaced_verts, 
             colors=np.tile([1, 0, 0], reps=(len(displaced_verts), 1)),
-            radius=0.001
+            radius=0.003
         ))
 
     if snapshot:

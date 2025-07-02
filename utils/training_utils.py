@@ -36,3 +36,29 @@ def save_model(state_dict: dict, file_path: str, timestamp: bool = False) -> str
     # Save the state dict
     torch.save(state_dict, save_path)
     return save_path
+
+def dict_to_device(d: dict, device: torch.device) -> dict:
+    """
+    Move all tensors (or lists of tensors) in d to the specified device.
+
+    Args:
+        d: A dict whose values may be torch.Tensor or list[torch.Tensor]
+        device: e.g. "cpu" or "cuda"
+
+    Returns:
+        The same dict with all tensors relocated in-place.
+    """
+    for k, v in d.items():
+        # single tensor
+        if isinstance(v, torch.Tensor):
+            d[k] = v.to(device)
+        # list of tensors
+        elif isinstance(v, list):
+            new_list = []
+            for item in v:
+                if isinstance(item, torch.Tensor):
+                    new_list.append(item.to(device))
+                else:
+                    new_list.append(item)
+            d[k] = new_list
+    return d
