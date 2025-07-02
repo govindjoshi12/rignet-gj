@@ -28,13 +28,19 @@ class RigNetDataset(Dataset):
         return len(self.examples)
 
     def __getitem__(self, index):
-        G = self.examples[index]
-        G['vertices'] = torch.FloatTensor(G['vertices'])
-        G['one_ring'] = torch.LongTensor(G['one_ring'])
-        G['geodesic'] = torch.LongTensor(G['geodesic'])
-        G['attn_mask'] = torch.FloatTensor(G['attn_mask'])
-        G['joints'] = torch.FloatTensor(G['joints'])
+        # Pull out the raw dict (with NumPy arrays)
+        raw = self.examples[index]
+
+        # Build a new map of torch tensors, all on CPU
+        G = {
+            'vertices': torch.from_numpy(raw['vertices']).float(),      # [V,3]
+            'one_ring': torch.from_numpy(raw['one_ring']).long(),       # [2, E_topo]
+            'geodesic': torch.from_numpy(raw['geodesic']).long(),       # [2, E_geo]
+            'attn_mask': torch.from_numpy(raw['attn_mask']).float(),    # [V]
+            'joints': torch.from_numpy(raw['joints']).float(),          # [J,3]
+        }
         return G
+
 
 # collate_fn for batching
 def collate_fn(batch: list[dict]):
