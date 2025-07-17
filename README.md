@@ -67,7 +67,7 @@ This folder contains generic modules and helpers used throughout the project:
   - `JointNet` (batched joint-prediction)
 - **visualization\_utils.py**: helper functions to visualize meshes, attention heatmaps, and predicted joints via Open3D.
 - **training\_utils.py**: training helpers, loss functions, checkpointing utilities, and PCK computations.
-- **cls\_validation\_utils.py**: standalone confusion‐matrix and precision/recall/F1/support helpers for binary classification.
+- **confusion\_utils.py**: standalone confusion‐matrix and precision/recall/F1/support helpers for binary classification.
 
 ---
 
