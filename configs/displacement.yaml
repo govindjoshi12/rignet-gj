@@ -1,0 +1,22 @@
+train_path: "../data/ModelResource_RigNetv1_preproccessed/mesh_graphs/train.pkl"
+val_path:   "../data/ModelResource_RigNetv1_preproccessed/mesh_graphs/val.pkl"
+epochs: 5000
+batch_size: 2
+lr: 5e-5
+wd: 1e-6
+num_workers: 4
+device: "cuda"
+logdir: "../runs/disp_pretrain"
+# checkpoint: null        # or provide a path to resume
+save_every: 1         # checkpoint every N epochs
+thresholds:
+  - 0.0
+  - 0.0025
+  - 0.005
+  - 0.0075
+  - 0.01
+  - 0.0125
+  - 0.015
+  - 0.0175
+  - 0.02
+config: null

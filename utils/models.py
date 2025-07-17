@@ -228,6 +228,11 @@ class MeanShiftClusterer(nn.Module):
         self.infer_iters = infer_iters
 
     def forward(self, q: torch.Tensor, attn: torch.Tensor = None):
+        """Mean-shift clusters vertices in q weighted by attn.
+        
+        Returns clustered vertices.
+        """
+        
         # q: [N, 3], attn: [N, 1]
 
         if attn is None:
@@ -237,8 +242,14 @@ class MeanShiftClusterer(nn.Module):
         max_iters = self.train_iters if self.training else self.infer_iters
 
         T_pred = mean_shift_clustering(q, attn, self.h, max_iters=max_iters)
-        T_pred = mode_extraction(T_pred, attn, self.h)
         return T_pred
+
+    def extract_modes(self, q: torch.Tensor, attn: torch.Tensor):
+        """Extract modes from clustered points. 
+        
+        For final joint extraction during inference."""
+
+        return mode_extraction(q, attn, self.h)
 
 # --- Overall Joint Prediction Network ---
 
@@ -309,10 +320,14 @@ class JointNet(nn.Module):
                 - "vertices_per_graph": 1D Tensor of ints of length N_total
                   If present, enables batched mode; otherwise, treats input as a single graph.
 
+        We return clustered points, not modes. Mode extraction only happens during 
+        inference because it is a non-differentiable operation.
+                  
         Returns:
-            List[Tensor]: A list of length M (number of graphs).
-                Each entry is a Tensor of shape [K_i, 3], the predicted joint locations
-                for graph i. In unbatched mode, returns a single-element list.
+            List[List[Tensor]]: 
+                - q_list: list of tensors of displaced vertices for each graph
+                - attn_list: attn values per graph
+                - clustered_list: clustered vertices per graph
         """
         verts, E_topo, E_geo = self._extract_graph(G)
 
@@ -322,19 +337,19 @@ class JointNet(nn.Module):
         vpg = G.get("vertices_per_graph", None)
         if vpg is None:
             # Unbatched: single graph
-            return [self.clustering_head(q, attn)]
+            return [q], [attn], [self.clustering_head(q, attn)]
 
         # Batched: split both q and attn by the given vertex counts
         # Splitting and indexing on a contigutous range is faster than using boolean masks
         splits = torch.split(torch.arange(verts.size(0)), vpg.tolist())
-        q_list, attn_list, joints_list = [], [], []
+        q_list, attn_list, clustered_list = [], [], []
         for idxs in splits:
             q_b = q[idxs]
             attn_b = attn[idxs]
-            joints_b = self.clustering_head(q_b, attn_b)
+            clustered_b = self.clustering_head(q_b, attn_b)
 
             q_list.append(q_b)
             attn_list.append(attn_b)
-            joints_list.append(joints_b)
+            clustered_list.append(clustered_b)
 
-        return q_list, attn_list, joints_list
+        return q_list, attn_list, clustered_list
