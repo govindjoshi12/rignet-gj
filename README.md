@@ -13,7 +13,7 @@ This repository contains my ongoing work to re-implement the **Joint Prediction*
 The original dataset is provided by the RigNet authors. To obtain it:
 
 - Email the corresponding author of the paper, or
-- If you are at Texas A&M, contact `govind@tamu.edu` directly for a copy.
+- If you are at Texas A&M, contact `gvj84@tamu.edu` directly for a copy.
 
 Once you have **ModelResource\_RigNetv1\_preprocessed.zip** in your working directory:
 
