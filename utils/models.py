@@ -70,13 +70,32 @@ class GMEdgeConv(nn.Module):
         return x_out
 
 
+# Utility method
+def _drop_edges(edges, drop_amt):
+    # edges: [2, E]
+    # 0 <= drop_amt < E
+
+    i, j = edges # both [E_geo]
+    E = i.size(0)
+
+    # pick the E_geo - edge_dropout indices *to keep*
+    # Randperm gets a random permutation of elements from 0 to E
+    # Then we only keep the first E - drop_amt elements
+    keep_idx = torch.randperm(E, device=i.device)[: E - drop_amt]
+    i = i[keep_idx]
+    j = j[keep_idx]
+    # reassemble
+    edges = torch.stack([i, j], dim=0)
+    return edges
+
+
 class GMEdgeNet(nn.Module):
     """A stack of edge convolutions with a prediction head of variable output size.
     
     The convolution layers are hardcoded for now for the purposes of the joint net. 
     """
 
-    def __init__(self, out=3):
+    def __init__(self, out=3, edge_dropout=15):
 
         super().__init__()
 
@@ -98,9 +117,20 @@ class GMEdgeNet(nn.Module):
             # No final activation. Outputs should be unconstrained
         )
 
+        self.edge_dropout = edge_dropout
+
     def forward(self, vertices, one_ring, geodesic):
 
         N, D = vertices.shape
+
+        # geodesic edge dropout
+        num_geo_edges = geodesic[0].size(0)
+        # Only drop is edge_dropout is positive
+        # and less than half of edges would be dropped
+        if self.training \
+            and self.edge_dropout > 0 \
+            and self.edge_dropout * 2 < num_geo_edges:
+            geodesic = _drop_edges(geodesic, self.edge_dropout)
 
         out64 = self.conv1(vertices, one_ring, geodesic)
         out256 = self.conv2(out64, one_ring, geodesic)
@@ -123,38 +153,20 @@ class GMEdgeNet(nn.Module):
 
 class JointDisplacementModule(nn.Module):
 
-    def __init__(self):
+    def __init__(self, edge_dropout=15):
         super().__init__()
-        self.model = GMEdgeNet(out=3)
+        self.model = GMEdgeNet(out=3, edge_dropout=edge_dropout)
     
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
 class VertexAttentionModule(nn.Module):
-    def __init__(self):
+    def __init__(self, edge_dropout=15):
         super().__init__()
-        self.model = GMEdgeNet(out=1)
+        self.model = GMEdgeNet(out=1, edge_dropout=edge_dropout)
     
     def forward(self, *args, **kwargs):
         return self.model(*args, **kwargs)
-
-# Utility method
-def _drop_edges(edges, drop_amt):
-    # edges: [2, E]
-    # 0 <= drop_amt < E
-
-    i, j = edges # both [E_geo]
-    E = i.size(0)
-
-    # pick the E_geo - edge_dropout indices *to keep*
-    # Randperm gets a random permutation of elements from 0 to E
-    # Then we only keep the first E - drop_amt elements
-    keep_idx = torch.randperm(E, device=i.device)[: E - drop_amt]
-    i = i[keep_idx]
-    j = j[keep_idx]
-    # reassemble
-    edges = torch.stack([i, j], dim=0)
-    return edges
 
 
 class JointFeatureNet(nn.Module):
@@ -194,15 +206,6 @@ class JointFeatureNet(nn.Module):
     def forward(self, x, edges_topo, edges_geo):
         # x: [N,3]
         N, D = x.shape
-
-        # geodesic edge dropout
-        num_geo_edges = edges_geo[0].size(0)
-        # Only drop is edge_dropout is positive
-        # and less than half of edges would be dropped
-        if self.training \
-            and self.edge_dropout > 0 \
-            and self.edge_dropout * 2 < num_geo_edges:
-            edges_geo = _drop_edges(edges_geo, self.edge_dropout)
 
         disp = self.disp_head(x, edges_topo, edges_geo) # [N,3]
         q = x + disp # displaced points [N,3]

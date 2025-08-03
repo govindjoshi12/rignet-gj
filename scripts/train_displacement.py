@@ -16,6 +16,7 @@ import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.amp.grad_scaler import GradScaler
+from torch.amp.autocast_mode import autocast
 
 from dataset import RigNetDataset, collate_fn, FILE_PATHS
 from models import JointDisplacementModule
@@ -135,7 +136,7 @@ def train_disp_head(
 
             optimizer.zero_grad()
             # ------ AMP Mixed Precision -------
-            with torch.autocast(device_type=str(device)):
+            with autocast(device_type=str(device)):
                 disp   = model(
                     batch['vertices'],
                     batch['one_ring'],
@@ -152,9 +153,9 @@ def train_disp_head(
                     device=device
                 )[0]
 
-                scaler.scale(loss_disp).backward()
-                scaler.step(optimizer)
-                scaler.update()
+            scaler.scale(loss_disp).backward()
+            scaler.step(optimizer)
+            scaler.update()
             # ---------------------------------
 
             # Step the LR scheduler
@@ -193,8 +194,6 @@ def train_disp_head(
                 )
                 print(f"New best AUC={best_auc:.4f}, checkpointed")
 
-
-
         # Rolling checkpoint every save_every epochs
         if epoch % save_every == 0:
             ckpt_path = os.path.join(writer.log_dir, f"latest.pt")
@@ -212,6 +211,7 @@ def parse_args():
     p.add_argument("--batch-size",   type=int, default=2)
     p.add_argument("--lr",           type=float, default=5e-5)
     p.add_argument("--wd",           type=float, default=1e-6)
+    p.add_argument("--edge-dropout", type=int, default=15)
     p.add_argument("--num-workers",  type=int, default=4)
     p.add_argument("--device",       type=str, default="cuda")
     p.add_argument("--logdir",       type=str, default="runs/disp_pretrain")
@@ -258,7 +258,8 @@ def main():
     
     # Initial setup
     steps_per_epoch = len(train_dl)
-    model = JointDisplacementModule().to(device)
+    print("edge dropout: %d" % args.edge_dropout)
+    model = JointDisplacementModule(edge_dropout=args.edge_dropout).to(device)
     
     # TODO: supply other optimizers and LR Schedulers
     # Even if these get initialized with default values (not specified by user)
@@ -271,7 +272,7 @@ def main():
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer=optimizer,
         max_lr=args.lr,
-        total_steps=args.epochs * len(train_dl)
+        total_steps=args.epochs * steps_per_epoch
     )
     current_epoch = 1
 

@@ -1,0 +1,13 @@
+train_path: "../data/ModelResource_RigNetv1_preproccessed/mesh_graphs/train.pkl"
+val_path:   "../data/ModelResource_RigNetv1_preproccessed/mesh_graphs/val.pkl"
+epochs: 5000
+batch_size: 2
+lr: 5e-5
+wd: 1e-6
+edge_dropout: 30
+num_workers: 4
+device: "cuda"
+logdir: "../runs/attn_pretrain_dropout30"
+# checkpoint: null        # or provide a path to resume
+save_every: 1         # checkpoint every N epochs
+config: null

@@ -17,6 +17,7 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 from torch.amp.grad_scaler import GradScaler
+from torch.amp.autocast_mode import autocast
 from dataset import RigNetDataset, collate_fn, FILE_PATHS, POS_ATTN_AVG
 from models import JointNet, VertexAttentionModule
 
@@ -141,7 +142,7 @@ def train_attn_head(
 
             # ------- Mixed Precision -------
             optimizer.zero_grad()
-            with torch.autocast(device_type=str(device)):
+            with autocast(device_type=str(device)):
                 logits = model(
                     batch['vertices'],
                     batch['one_ring'],
@@ -212,6 +213,7 @@ def parse_args():
     p.add_argument("--batch-size",   type=int, default=2)
     p.add_argument("--lr",           type=float, default=5e-5)
     p.add_argument("--wd",           type=float, default=1e-6)
+    p.add_argument("--edge-dropout", type=int, default=15)
     p.add_argument("--num-workers",  type=int, default=4)
     p.add_argument("--device",       type=str, default="cuda")
     p.add_argument("--logdir",       type=str, default="runs/attention_pretrain")
@@ -266,7 +268,8 @@ def main():
 
     # 5) build model + optimizer + scheduler
     steps_per_epoch = len(train_dl)
-    model = VertexAttentionModule().to(device)
+    print("edge dropout: %d" % args.edge_dropout)
+    model = VertexAttentionModule(edge_dropout=args.edge_dropout).to(device)
 
     optimizer = torch.optim.AdamW(
         model.parameters(),
