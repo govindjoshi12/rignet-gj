@@ -13,7 +13,7 @@ This repository contains my ongoing work to re-implement the **Joint Prediction*
 The original dataset is provided by the RigNet authors. To obtain it:
 
 - Email the corresponding author of the paper, or
-- If you are at Texas A&M, contact `govind@tamu.edu` directly for a copy.
+- If you are at Texas A&M, contact `gvj84@tamu.edu` directly for a copy.
 
 Once you have **ModelResource\_RigNetv1\_preprocessed.zip** in your working directory:
 
@@ -67,7 +67,7 @@ This folder contains generic modules and helpers used throughout the project:
   - `JointNet` (batched joint-prediction)
 - **visualization\_utils.py**: helper functions to visualize meshes, attention heatmaps, and predicted joints via Open3D.
 - **training\_utils.py**: training helpers, loss functions, checkpointing utilities, and PCK computations.
-- **cls\_validation\_utils.py**: standalone confusion‐matrix and precision/recall/F1/support helpers for binary classification.
+- **confusion\_utils.py**: standalone confusion‐matrix and precision/recall/F1/support helpers for binary classification.
 
 ---
 
